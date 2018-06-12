@@ -1,0 +1,4 @@
+In no particular order:
+  * Don't hard code the server and the port
+  * Implement other PAM services
+  * Don't rely on pam_get_authtok, or at least do an intelligent check if its available.

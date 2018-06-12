@@ -19,6 +19,18 @@ char *get_user(pam_handle_t *pamh) {
   return strdup(user);
 }
 
+char *get_service(pam_handle_t *pamh) {
+  if (!pamh) {
+    return NULL;
+  }
+  int err = 0;
+  const char *service;
+  if ((err = pam_get_item(pamh, PAM_SERVICE, (const void**)&service)) != PAM_SUCCESS) {
+    return NULL;
+  }
+  return strdup(service);
+}
+
 char *get_secret(pam_handle_t *pamh) {
   if (!pamh) {
     return NULL;

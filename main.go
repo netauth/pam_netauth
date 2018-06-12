@@ -3,6 +3,11 @@ package main
 import (
 	"fmt"
 	"unsafe"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	"github.com/NetAuth/NetAuth/pkg/client"
 )
 
 /*
@@ -11,6 +16,7 @@ import (
 #include <security/pam_appl.h>
 #include <stdlib.h>
 
+char *get_service(pam_handle_t *pamh);
 char *get_user(pam_handle_t *pamh);
 char *get_secret(pam_handle_t *pamh);
 */
@@ -18,10 +24,27 @@ import "C"
 
 //export pam_sm_authenticate
 func pam_sm_authenticate(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char) C.int {
-	fmt.Println("In netauth code")
+	cService := C.get_service(pamh)
+	if cService == nil {
+		return C.PAM_SYSTEM_ERR
+	}
+	defer C.free(unsafe.Pointer(cService))
+
+	nacl, err := client.New("localhost", 8080, C.GoString(cService), "")
+	if err != nil {
+		// Couldn't get a client
+		return C.PAM_AUTHTOK_ERR
+	}
+
 	cUsername := C.get_user(pamh)
 	if cUsername == nil {
-		return C.PAM_USER_UNKNOWN
+		_, err := nacl.EntityInfo(C.GoString(cUsername))
+		if status.Code(err) == codes.NotFound {
+			return C.PAM_USER_UNKNOWN
+		}
+		// Something went wrong trying to run the info query
+		return C.PAM_AUTHTOK_ERR
+
 	}
 	defer C.free(unsafe.Pointer(cUsername))
 
@@ -32,7 +55,12 @@ func pam_sm_authenticate(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char)
 	}
 	defer C.free(unsafe.Pointer(cSecret))
 
-	fmt.Printf("Authenticating as %s:%s\n", C.GoString(cUsername), C.GoString(cSecret))
+	// Run the authentication
+	result, err := nacl.Authenticate(C.GoString(cUsername), C.GoString(cSecret))
+	if status.Code(err) != codes.OK || !result.GetSuccess() {
+		return C.PAM_AUTH_ERR
+	}
+	fmt.Println(result)
 	return C.PAM_SUCCESS
 }
 

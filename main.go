@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
 	"unsafe"
 
 	"google.golang.org/grpc/codes"
@@ -22,8 +24,16 @@ char *get_secret(pam_handle_t *pamh);
 */
 import "C"
 
+func disableLog() {
+	log.SetFlags(0)
+	log.SetOutput(ioutil.Discard)
+}
+
 //export pam_sm_authenticate
 func pam_sm_authenticate(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char) C.int {
+	// The nacl client is noisy, so turn off the log
+	disableLog()
+
 	cService := C.get_service(pamh)
 	if cService == nil {
 		return C.PAM_SYSTEM_ERR
@@ -61,7 +71,6 @@ func pam_sm_authenticate(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char)
 	if status.Code(err) != codes.OK || !result.GetSuccess() {
 		return C.PAM_AUTH_ERR
 	}
-	fmt.Println(result)
 	return C.PAM_SUCCESS
 }
 

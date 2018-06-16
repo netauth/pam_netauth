@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "github.com/BurntSushi/toml"
+  packages = ["."]
+  revision = "b26d9c308763d68093482582cea63d69be07a0f0"
+  version = "v0.3.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/NetAuth/NetAuth"
   packages = [
@@ -13,7 +19,7 @@
     "internal/tree",
     "pkg/client"
   ]
-  revision = "30677de8e82f3c83302df43930de522e643abeeb"
+  revision = "e7e3ca47189a519cbb9487e8853942d302840293"
 
 [[projects]]
   branch = "master"
@@ -37,7 +43,7 @@
     "ptypes/duration",
     "ptypes/timestamp"
   ]
-  revision = "05f48f4eaf0e05663b562bab533cdd472238ce29"
+  revision = "5831880292e721c76b58a16ecc60adc27d8e6355"
 
 [[projects]]
   branch = "master"

@@ -30,11 +30,12 @@ func pam_sm_authenticate(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char)
 	}
 	defer C.free(unsafe.Pointer(cService))
 
-	nacl, err := client.New("localhost", 8080, C.GoString(cService), "")
+	nacl, err := client.New(nil)
 	if err != nil {
 		// Couldn't get a client
 		return C.PAM_AUTHTOK_ERR
 	}
+	nacl.SetServiceID(C.GoString(cService))
 
 	cUsername := C.get_user(pamh)
 	if cUsername == nil {

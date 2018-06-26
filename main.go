@@ -74,6 +74,11 @@ func pam_sm_authenticate(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char)
 	return C.PAM_SUCCESS
 }
 
+//export pam_sm_setcred
+func pam_sm_setcred(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char) C.int {
+	return C.PAM_IGNORE
+}
+
 // This doesn't do anything but the compiler needs to see a "main"
 // symbol in order to proceed.
 func main() {}

@@ -7,6 +7,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"github.com/spf13/viper"
 
 	"github.com/NetAuth/NetAuth/pkg/client"
 )
@@ -28,10 +29,24 @@ func disableLog() {
 	log.SetOutput(ioutil.Discard)
 }
 
+func cfgInit() error {
+	viper.SetConfigName("config")
+	viper.AddConfigPath("/etc/netauth/")
+	if err := viper.ReadInConfig(); err != nil {
+		return err
+	}
+	return nil
+}
+
 //export pam_sm_authenticate
 func pam_sm_authenticate(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char) C.int {
 	// The nacl client is noisy, so turn off the log
 	disableLog()
+
+	// Read in the config file
+	if err := cfgInit(); err != nil {
+		return C.PAM_SYSTEM_ERR
+	}
 
 	cService := C.get_service(pamh)
 	if cService == nil {
@@ -39,12 +54,12 @@ func pam_sm_authenticate(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char)
 	}
 	defer C.free(unsafe.Pointer(cService))
 
-	nacl, err := client.New(nil)
+	nacl, err := client.New()
 	if err != nil {
 		// Couldn't get a client
 		return C.PAM_AUTHTOK_ERR
 	}
-	nacl.SetServiceID(C.GoString(cService))
+	viper.Set("client.ServiceName", C.GoString(cService))
 
 	cUsername := C.get_user(pamh)
 	if cUsername == nil {

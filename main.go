@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"unsafe"
@@ -61,7 +60,6 @@ func pam_sm_authenticate(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char)
 
 	cSecret := C.get_secret(pamh)
 	if cSecret == nil {
-		fmt.Println("cSecret was nil")
 		return C.PAM_CRED_INSUFFICIENT
 	}
 	defer C.free(unsafe.Pointer(cSecret))

@@ -1,15 +1,17 @@
 package main
 
 import (
+	"context"
 	"io/ioutil"
 	"log"
 	"unsafe"
 
+	"github.com/spf13/viper"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"github.com/spf13/viper"
 
-	"github.com/NetAuth/NetAuth/pkg/client"
+	"github.com/netauth/netauth/pkg/netauth"
+	_ "github.com/netauth/netauth/pkg/netauth/memory"
 )
 
 /*
@@ -35,6 +37,7 @@ func cfgInit() error {
 	if err := viper.ReadInConfig(); err != nil {
 		return err
 	}
+	viper.Set("token.cache", "memory")
 	return nil
 }
 
@@ -54,16 +57,18 @@ func pam_sm_authenticate(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char)
 	}
 	defer C.free(unsafe.Pointer(cService))
 
-	nacl, err := client.New()
+	nacl, err := netauth.New()
 	if err != nil {
 		// Couldn't get a client
 		return C.PAM_AUTHTOK_ERR
 	}
-	viper.Set("client.ServiceName", C.GoString(cService))
+	nacl.SetServiceName(C.GoString(cService))
+
+	ctx := context.Background()
 
 	cUsername := C.get_user(pamh)
 	if cUsername == nil {
-		_, err := nacl.EntityInfo(C.GoString(cUsername))
+		_, err := nacl.EntityInfo(ctx, C.GoString(cUsername))
 		if status.Code(err) == codes.NotFound {
 			return C.PAM_USER_UNKNOWN
 		}
@@ -80,8 +85,7 @@ func pam_sm_authenticate(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char)
 	defer C.free(unsafe.Pointer(cSecret))
 
 	// Run the authentication
-	result, err := nacl.Authenticate(C.GoString(cUsername), C.GoString(cSecret))
-	if status.Code(err) != codes.OK || !result.GetSuccess() {
+	if err := nacl.AuthEntity(ctx, C.GoString(cUsername), C.GoString(cSecret)); err != nil {
 		return C.PAM_AUTH_ERR
 	}
 	return C.PAM_SUCCESS

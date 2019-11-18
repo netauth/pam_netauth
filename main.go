@@ -37,7 +37,6 @@ func cfgInit() error {
 	if err := viper.ReadInConfig(); err != nil {
 		return err
 	}
-	viper.Set("token.cache", "memory")
 	return nil
 }
 

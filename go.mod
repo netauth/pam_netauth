@@ -1,4 +1,4 @@
-module github.com/NetAuth/pam_netauth
+module github.com/netauth/pam_netauth
 
 go 1.12
 

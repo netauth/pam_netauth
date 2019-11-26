@@ -2,10 +2,9 @@ package main
 
 import (
 	"context"
-	"io/ioutil"
-	"log"
 	"unsafe"
 
+	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -26,11 +25,6 @@ char *get_secret(pam_handle_t *pamh);
 */
 import "C"
 
-func disableLog() {
-	log.SetFlags(0)
-	log.SetOutput(ioutil.Discard)
-}
-
 func cfgInit() error {
 	viper.SetConfigName("config")
 	viper.AddConfigPath("/etc/netauth/")
@@ -43,7 +37,7 @@ func cfgInit() error {
 //export pam_sm_authenticate
 func pam_sm_authenticate(pamh *C.pam_handle_t, flags, argc C.int, argv **C.char) C.int {
 	// The nacl client is noisy, so turn off the log
-	disableLog()
+	hclog.SetDefault(hclog.NewNullLogger())
 
 	// Read in the config file
 	if err := cfgInit(); err != nil {

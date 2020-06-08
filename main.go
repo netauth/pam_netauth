@@ -10,7 +10,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/netauth/netauth/pkg/netauth"
-	_ "github.com/netauth/netauth/pkg/netauth/memory"
 )
 
 /*
